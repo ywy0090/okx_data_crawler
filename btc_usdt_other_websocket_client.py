@@ -2,8 +2,11 @@ import websocket
 import json
 from datetime import datetime
 import time
+import os
 
 root_path = './btc_usdt/'
+#if not os.path.exists(root_path):
+#    os.makedirs(root_path)
 # URL of the WebSocket you want to connect to
 ws_url = 'wss://ws.okx.com:8443/ws/v5/public'
 
@@ -29,11 +32,60 @@ mark_price_req = {
     }]
 }
 
+open_interest_req = {
+    "op": "subscribe",
+    "args": [{
+        "channel": "open-interest",
+        "instId": "BTC-USD-SWAP"
+    }]
+}
+
+estimated_req = {
+    "op": "subscribe",
+    "args": [{
+        "channel": "estimated-price",
+        "instType": "FUTURES",
+        "instFamily": "BTC-USD"
+    }]
+}
+
+liquidation_orders_req = {
+  "op": "subscribe",
+  "args": [
+    {
+      "channel": "liquidation-orders",
+      "instType": "SWAP"
+    }
+  ]
+}
+
+adl_warning_req = {
+    "op": "subscribe",
+    "args": [{
+        "channel": "adl-warning",
+        "instType": "FUTURES",
+        "instFamily": "BTC-USDT"
+    }]
+}
+
+index_candle_req ={
+    "op": "subscribe",
+    "args": [{
+        "channel": "index-candle1m",
+        "instId": "BTC-USD"
+    }]
+}
+
 
 def on_open(ws):
     # Send the subscription request when the connection is opened
     ws.send(json.dumps(price_limit_req))
     ws.send(json.dumps(mark_price_req))
+    ws.send(json.dumps(open_interest_req))
+    ws.send(json.dumps(estimated_req))
+    ws.send(json.dumps(liquidation_orders_req))
+    ws.send(json.dumps(adl_warning_req))
+    ws.send(json.dumps(index_candle_req))
 
 
 def on_error(ws, error):
@@ -62,10 +114,16 @@ def on_message(ws, message):
         # Get the current date for the filename
         today_date = datetime.now().strftime('%Y-%m-%d')
         # Create a file name based on the current date
+        
+        pth_name = root_path + "/" + channel_name + "/"
+        
         for channel_name, cur_buffer in data_buffer.items():
-            file_name = f"{channel_name}_data_{today_date}.jsonl"
+            pth_name = root_path + "/" + channel_name + "/"
+            if not os.path.exists(pth_name):
+                os.makedirs(pth_name)
+            file_name = f"_{today_date}.json"
             # Write the buffered data to the file
-            with open(root_path+file_name, 'a') as file:
+            with open(pth_name+file_name, 'a') as file:
                 for item in cur_buffer:
                     json.dump(item, file)
                     file.write('\n')  # Newline for each JSON object
