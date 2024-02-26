@@ -2,7 +2,10 @@ import websocket
 import json
 from datetime import datetime
 import time
+import os
 
+
+root_path = './btc_usdt/'
 # URL of the WebSocket you want to connect to
 ws_url = 'wss://ws.okx.com:8443/ws/v5/public'
 
@@ -10,7 +13,7 @@ ws_url = 'wss://ws.okx.com:8443/ws/v5/public'
 data_buffer = []
 
 # File write interval in seconds (e.g., every 5 minutes)
-write_interval = 120  # 2 * 60
+write_interval = 120 # 2 * 60
 
 # Subscription request to send to the server
 subscribe_request = {
@@ -50,12 +53,19 @@ def on_message(ws, message):
     if current_time - on_message.last_write_time >= write_interval:
         # Get the current date for the filename
         today_date = datetime.now().strftime('%Y-%m-%d')
+        
+        channel_name = data["arg"]["channel"]
 
+        pth_name = root_path + "/" + channel_name + "/"
+        
+        if not os.path.exists(pth_name):
+            os.makedirs(pth_name)
+        
         # Create a file name based on the current date
         file_name = f"data_{today_date}.jsonl"
 
         # Write the buffered data to the file
-        with open(file_name, 'a') as file:
+        with open(pth_name+file_name, 'a') as file:
             for item in data_buffer:
                 json.dump(item, file)
                 file.write('\n')  # Newline for each JSON object
